@@ -22,7 +22,7 @@ from utils.decode import (
 
 n_mfcc = 15
 BATCH_SIZE = 16
-LR = 0.1
+LR = 0.001
 MAX_EPOCHS = 100000
 TIME_LIMIT = 20 * 60
 eps = 1e-8
@@ -113,13 +113,30 @@ def train_epoch():
     model.train()
     total_loss = 0.0
 
-    for batch in tqdm(train_loader):
+    for i, batch in enumerate(tqdm(train_loader)):
         mfcc = mfcc_transform(batch["wavs"]).transpose(1, 2)
+        
+        # DEBUG: Check for NaN in input
+        if torch.isnan(mfcc).any():
+            print(f"NaN in MFCC at batch {i}")
+            continue
+            
         mean = mfcc.mean(dim=1, keepdim=True)
         std = mfcc.std(dim=1, keepdim=True)
         mfcc = (mfcc - mean) / (std + eps)
+        
+        # DEBUG: Check for NaN after normalization  
+        if torch.isnan(mfcc).any():
+            print(f"NaN after normalization at batch {i}")
+            print(f"std min: {std.min()}, std max: {std.max()}")
+            continue
 
-        logits = model(mfcc.to(device))  # (B, T, N)
+        logits = model(mfcc.to(device))
+        
+        # DEBUG: Check logits
+        if torch.isnan(logits).any():
+            print(f"NaN in logits at batch {i}")
+            continue
         logit_lengths = wav_lengths_to_logit_lengths(batch["wav_lengths"]).to(device)
 
         targets = batch["letters"].to(device)  # (B, K)
