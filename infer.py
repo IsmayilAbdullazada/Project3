@@ -57,7 +57,15 @@ def main(args):
     checkpoint = torch.load(CHECKPOINT_PATH, map_location=device)
     n_mfcc   = checkpoint.get("n_mfcc",    DEFAULT_N_MFCC)
     feat_dim = checkpoint.get("feat_dim",  DEFAULT_FEAT_DIM)
-    print(f"Checkpoint config: n_mfcc={n_mfcc}, feat_dim={feat_dim}")
+
+    # Use defaults that match the NEW model.py if not saved in checkpoint
+    hidden_dim = checkpoint.get("hidden_dim") or 256
+    num_layers = checkpoint.get("num_layers") or 3
+    dropout = checkpoint.get("dropout") or 0.3
+    num_classes = checkpoint.get("num_classes") or len(test_dataset.scr_letters)
+
+
+    print(f"Checkpoint config: n_mfcc={n_mfcc}, feat_dim={feat_dim}, hidden_dim={hidden_dim}, num_layers={num_layers}")
 
     mfcc_transform  = get_mfcc_transform(n_mfcc).to(device)
     delta_transform = get_delta_transform().to(device)
@@ -77,8 +85,11 @@ def main(args):
     # Model
     # --------------------------------------------------
     model = SequenceClassifier(
-        num_classes=len(test_dataset.scr_letters),
+        num_classes=num_classes,
         feat_dim=feat_dim,
+        hidden_dim=hidden_dim,
+        num_layers=num_layers,
+        dropout=dropout,
     ).to(device)
     model.load_state_dict(checkpoint["model_state_dict"])
     model.eval()

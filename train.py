@@ -30,11 +30,11 @@ print("Using device:", device)
 n_mfcc      = 40
 FEAT_DIM    = n_mfcc * 3       # static + delta + delta²  = 120
 BATCH_SIZE  = 32
-LR          = 2e-4             # slightly lower learning rate
+LR          = 3e-4             # slightly lower learning rate
 MAX_EPOCHS  = 100000
 TIME_LIMIT  = 20 * 60
-GRAD_CLIP   = 0.5              # more aggressive clipping
-WEIGHT_DECAY = 1e-4            # stronger weight decay
+GRAD_CLIP   = 1.0              # more aggressive clipping
+WEIGHT_DECAY = 1e-3            # stronger weight decay
 eps         = 1e-8
 
 # Early stopping config
@@ -83,13 +83,10 @@ dev_loader = DataLoader(
 model = SequenceClassifier(
     num_classes=len(train_dataset.scr_letters),
     feat_dim=FEAT_DIM,
-    hidden_dim=192,
-    num_layers=2,
-    dropout=0.4,
 ).to(device)
 
 # Adam with stronger weight decay
-optimizer = optim.AdamW(model.parameters(), lr=LR, weight_decay=WEIGHT_DECAY)
+optimizer = optim.Adam(model.parameters(), lr=LR, weight_decay=1e-5)
 
 # ReduceLROnPlateau - reduces LR when validation loss plateaus
 scheduler = optim.lr_scheduler.ReduceLROnPlateau(
@@ -371,7 +368,7 @@ while epoch < MAX_EPOCHS:
                 "dev_greedy_cer": greedy_cer,
                 "epoch": epoch,
                 "n_mfcc": n_mfcc,
-                "feat_dim": FEAT_DIM,
+                **model.config,  # save model config for later inference
             },
             CHECKPOINT_PATH,
         )

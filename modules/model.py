@@ -8,11 +8,20 @@ class SequenceClassifier(nn.Module):
         self,
         num_classes,
         feat_dim=120,       # 40 MFCCs × 3 (static + Δ + ΔΔ)
-        hidden_dim=192,     # wider hidden state
-        num_layers=2,       # deeper network
-        dropout=0.4,
+        hidden_dim=256,     # wider hidden state
+        num_layers=3,       # deeper network
+        dropout=0.3,
     ):
         super().__init__()
+
+        # Store config for later access
+        self.config = {
+            "num_classes": num_classes,
+            "feat_dim": feat_dim,
+            "hidden_dim": hidden_dim,
+            "num_layers": num_layers,
+            "dropout": dropout,
+        }
 
         # Optional: lightweight linear projection before LSTM
         # helps when feat_dim is large
@@ -20,7 +29,6 @@ class SequenceClassifier(nn.Module):
             nn.Linear(feat_dim, hidden_dim),
             nn.LayerNorm(hidden_dim),
             nn.GELU(),
-            nn.Dropout(dropout),
         )
 
         self.encoder = nn.LSTM(
@@ -36,11 +44,10 @@ class SequenceClassifier(nn.Module):
 
         self.classifier = nn.Sequential(
             nn.LayerNorm(proj_dim),
-            nn.Dropout(dropout),
-            nn.Linear(proj_dim, proj_dim // 2),
+            nn.Linear(proj_dim, proj_dim),
             nn.GELU(),
             nn.Dropout(dropout),
-            nn.Linear(proj_dim // 2, num_classes),
+            nn.Linear(proj_dim, num_classes),
         )
 
     def forward(self, input_features):
