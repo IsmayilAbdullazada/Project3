@@ -30,7 +30,7 @@ print("Using device:", device)
 
 n_mfcc = 15
 BATCH_SIZE = 16
-LR = 0.001
+LR = 0.1
 MAX_EPOCHS = 100000
 TIME_LIMIT = 20 * 60
 eps = 1e-8
