@@ -16,6 +16,14 @@ from utils.decode import (
     decode_batch_ctc_beam,
 )
 
+
+# -------------------------------------------------
+# Device
+# -------------------------------------------------
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print("Using device:", device)
+
 # -------------------------------------------------
 # Config
 # -------------------------------------------------
@@ -33,13 +41,6 @@ mfcc_transform = get_mfcc_transform(n_mfcc).to(device)
 CTC_BLANK_ID = 0
 CTC_TARGET_PAD_ID = CTC_BLANK_ID
 BEAM_SIZE = 4
-
-# -------------------------------------------------
-# Device
-# -------------------------------------------------
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print("Using device:", device)
 
 # -------------------------------------------------
 # Dataset / Loader
