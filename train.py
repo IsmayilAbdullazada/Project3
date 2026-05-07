@@ -28,7 +28,7 @@ TIME_LIMIT = 20 * 60
 eps = 1e-8
 
 CHECKPOINT_PATH = Path("best_model.pt")
-mfcc_transform = get_mfcc_transform(n_mfcc)
+mfcc_transform = get_mfcc_transform(n_mfcc).to(device)
 
 CTC_BLANK_ID = 0
 CTC_TARGET_PAD_ID = CTC_BLANK_ID
@@ -38,7 +38,7 @@ BEAM_SIZE = 4
 # Device
 # -------------------------------------------------
 
-device = torch.device("cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Using device:", device)
 
 # -------------------------------------------------
@@ -114,7 +114,8 @@ def train_epoch():
     total_loss = 0.0
 
     for i, batch in enumerate(tqdm(train_loader)):
-        mfcc = mfcc_transform(batch["wavs"]).transpose(1, 2)
+        wavs = batch["wavs"].to(device)
+        mfcc = mfcc_transform(wavs).transpose(1, 2)
         
         # DEBUG: Check for NaN in input
         if torch.isnan(mfcc).any():
@@ -179,7 +180,8 @@ def evaluate():
     id2letter = {i: ch for ch, i in dev_dataset.letter2id.items()}
 
     for batch in dev_loader:
-        mfcc = mfcc_transform(batch["wavs"]).transpose(1, 2)
+        wavs = batch["wavs"].to(device)
+        mfcc = mfcc_transform(wavs).transpose(1, 2)
         mean = mfcc.mean(dim=1, keepdim=True)
         std = mfcc.std(dim=1, keepdim=True)
         mfcc = (mfcc - mean) / (std + eps)
