@@ -11,6 +11,8 @@ from modules.dataset import CLSPDataset, clsp_collate
 from modules.model import SequenceClassifier
 from utils.features import get_mfcc_transform, wav_lengths_to_logit_lengths
 
+
+
 # CTC decoders (beam is optional)
 from utils.decode import decode_batch_ctc_vocab_minloss, decode_batch_ctc_greedy
 try:
@@ -19,6 +21,10 @@ try:
 except Exception:
     decode_batch_ctc_beam = None
     HAS_BEAM = False
+
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print("Using device:", device)
 
 
 def check_argv():
@@ -35,11 +41,8 @@ def check_argv():
 # --------------------------------------------------
 n_mfcc = 15
 BATCH_SIZE = 16
-mfcc_transform = get_mfcc_transform(n_mfcc)
+mfcc_transform = get_mfcc_transform(n_mfcc).to(device)
 CTC_BLANK_ID = 0
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print("Using device:", device)
 
 
 def main(args):
@@ -83,7 +86,8 @@ def main(args):
 
     with torch.no_grad():
         for batch in tqdm(test_loader):
-            mfcc = mfcc_transform(batch["wavs"]).transpose(1, 2)
+            wavs = batch["wavs"].to(device)
+            mfcc = mfcc_transform(wavs).transpose(1, 2)
             mean = mfcc.mean(dim=1, keepdim=True)
             std = mfcc.std(dim=1, keepdim=True)
             mfcc = (mfcc - mean) / (std + 1e-8)
